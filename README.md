@@ -7,7 +7,7 @@ Shortly, it will contain a bash script for running installing, then preparing th
 For the next service to work, the generated netcdf must be moved to the service directory.
 
 ## service
-This python service is a basic flask app that utilizes the master netcdf prepared by the master-netcdf tool allowing the frontend to sum the rasters across a given time period. The result is then returned as a blob of content-type x-netcdf which can be downloaded to the client's computer on the frontend. There is can be loaded into an GUI for viewing rasters. 
+This python service is a basic flask app that utilizes the master netcdf prepared by the master-netcdf tool allowing the frontend to sum the rasters across a given time period. The result is then returned as a blob of content-type x-netcdf which can be downloaded to the client's computer on the frontend. There it can be loaded into a GUI for viewing rasters. 
 This service requires the environment to contain the FLASK_APP variable equal to flaskr and FLASK_ENV variable equal to production. Then flask run can be used to run the application.
 ```
 export FLASK_APP=flaskr
