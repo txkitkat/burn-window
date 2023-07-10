@@ -1,11 +1,11 @@
 import os
 import glob
 import time
-
 import numpy as np
 import xarray
 from flask import Flask, request, send_from_directory
 from flask_cors import cross_origin
+import matplotlib.pyplot as plt
 
 
 def create_app(test_config=None):
@@ -32,10 +32,16 @@ def create_app(test_config=None):
 
         start_date, end_date = request.args.get('start_date'), request.args.get('end_date')
         if start_date is not None and end_date is not None:
-            filename = query(int(start_date), int(end_date))
-            return send_from_directory(directory=os.getcwd(), path=filename, as_attachment=True)
-        
+            return query(int(start_date), int(end_date))
+
         return 'failed'
+
+    @app.route('/image', methods=['GET'])
+    @cross_origin()
+    def get_image():
+        return send_from_directory('.', 'window.png')
+
+
 
     return app
 
@@ -56,8 +62,10 @@ def query(start_date: int, end_date: int):
         flattened_window.data = np.sum(burn_windows.data[start_date:end_date, :, :], axis=0)
         flattened_window = flattened_window.astype('uint32')
 
-        filename = f'burn-window-{time.time()}.nc'
-        flattened_window.rio.write_crs("epsg:4326", inplace=True)
-        flattened_window.rio.set_spatial_dims(x_dim="lon", y_dim="lat")
-        flattened_window.rio.to_raster(filename)
-        return filename
+        fig, ax = plt.subplots()
+        fig.patch.set_visible(False)
+        ax.axis('off')
+        plt.imshow(flattened_window, cmap=plt.cm.Reds_r)
+        plt.close(fig)
+        fig.savefig('window.png')
+        return 'success'
