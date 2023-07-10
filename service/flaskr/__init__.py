@@ -1,10 +1,13 @@
 import os
 import glob
 import time
+
+import matplotlib
 import numpy as np
 import xarray
 from flask import Flask, request, send_from_directory
 from flask_cors import cross_origin
+import matplotlib.image
 import matplotlib.pyplot as plt
 
 
@@ -62,10 +65,12 @@ def query(start_date: int, end_date: int):
         flattened_window.data = np.sum(burn_windows.data[start_date:end_date, :, :], axis=0)
         flattened_window = flattened_window.astype('uint32')
 
-        fig, ax = plt.subplots()
-        fig.patch.set_visible(False)
-        ax.axis('off')
-        plt.imshow(flattened_window, cmap=plt.cm.Reds_r)
-        plt.close(fig)
-        fig.savefig('window.png')
+        # fig, ax = plt.subplots()
+        # fig.patch.set_visible(False)
+        # ax.axis('off')
+        # plt.ioff()
+        # plt.imshow(flattened_window, cmap=plt.cm.Reds_r)
+        # plt.close(fig)
+        # fig.savefig('window.png')
+        matplotlib.image.imsave('window.png', flattened_window, cmap=plt.cm.Reds_r)
         return 'success'
