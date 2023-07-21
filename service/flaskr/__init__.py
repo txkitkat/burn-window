@@ -68,19 +68,30 @@ def query(start_date: int, end_date: int):
         burn_windows = burn_windows_dataset.__xarray_dataarray_variable__
         flattened_window = xarray.DataArray(coords=[burn_windows.coords['lat'][:], burn_windows.coords['lon'][:]],
                                             dims=['lat', 'lon'])
-        flattened_window.data = np.sum(burn_windows.data[start_date:end_date, :, :], axis=0)
+
+        flattened_window.data = np.sum(burn_windows.data[start_date:end_date, :, :], axis=0) # Sum data between a period of time (in days)
         flattened_window = flattened_window.astype('uint32')
 
+        #Create Legend and Burn-Window Map
         fig, ax = plt.subplots()
         fig.patch.set_visible(False)
         ax.axis('off')
         plt.ioff()
-        plt.imshow(flattened_window, plt.cm.Reds_r)
-        plt.colorbar(ax = ax, label="Days?")
+        plt.imshow(flattened_window, cmap = 'hot')
+
+        # Currently, the colormap includes the background color of the burn-window which is represented as the top color in the scale
+        # making it hard to visualize the numbers for the burn-window in California
+        # A solution in the meantime is to reduce the top range (for a large amount of days)
+        number_of_total_days_in_burn_window = end_date - start_date
+        if(number_of_total_days_in_burn_window >= 100):
+            number_of_total_days_in_burn_window = number_of_total_days_in_burn_window * 0.7
+
+        plt.colorbar(ax = ax, label="Day", boundaries=np.linspace(0, number_of_total_days_in_burn_window))
         ax.remove()
         #plt.show()
         plt.close(fig)
         fig.savefig('legend.png', bbox_inches = 'tight', pad_inches = 0)
 
-        matplotlib.image.imsave('window.png', flattened_window, cmap=plt.cm.Reds_r) 
+        matplotlib.rcParams['savefig.dpi'] = 300
+        matplotlib.image.imsave('window.png', flattened_window, cmap='hot') 
         return 'success'
