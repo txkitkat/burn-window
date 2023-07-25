@@ -11,6 +11,7 @@ from flask_cors import cross_origin
 import matplotlib.image
 import matplotlib.pyplot as plt
 from werkzeug.serving import run_simple
+from .county import query_county
 
 
 
@@ -46,6 +47,12 @@ def create_app(test_config=None):
     @cross_origin()
     def get_image():
         return send_from_directory('.', 'window.png')
+
+    @app.route('/county', methods=['GET'])
+    @cross_origin()
+    def county():
+        date = request.args.get('date')
+        return query_county(int(date))
 
     @app.route('/legend', methods=['GET'])
     @cross_origin()
