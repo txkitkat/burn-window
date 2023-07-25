@@ -51,8 +51,8 @@ def create_app(test_config=None):
     @app.route('/county', methods=['GET'])
     @cross_origin()
     def county():
-        date = request.args.get('date')
-        return query_county(int(date))
+        start_date, end_date = request.args.get('start_date'), request.args.get('end_date')
+        return query_county(int(start_date), int(end_date))
 
     @app.route('/legend', methods=['GET'])
     @cross_origin()

@@ -68,22 +68,33 @@ counties = {
     '06115': 'Yuba'
 }
 
-def query_county(date):
+
+def query_county(start, end):
     shape = geopandas.read_file("CA_Counties/CA_Counties_TIGER2016.shp")
     result = []
 
     with xarray.open_dataset("window.nc") as burn_windows_dataset:
         burn_windows = burn_windows_dataset.__xarray_dataarray_variable__
-        flattened_window = xarray.DataArray(coords=[burn_windows.coords['lat'][:], burn_windows.coords['lon'][:]], dims=['lat', 'lon'])
-        
-        flattened_window.data = np.sum(burn_windows.data[date:date+1, :, :], axis=0)
+        flattened_window = xarray.DataArray(coords=[burn_windows.coords['lat'][:], burn_windows.coords['lon'][:]],
+                                            dims=['lat', 'lon'])
+
+        flattened_window.data = np.sum(burn_windows.data[start:end + 1, :, :], axis=0)
         flattened_window.rio.write_crs("EPSG:4326", inplace=True)
+
+        county_area = xarray.DataArray(coords=[burn_windows.coords['lat'][:], burn_windows.coords['lon'][:]],
+                                       dims=['lat', 'lon'])
+        county_area.rio.write_crs("EPSG:4326", inplace=True)
+        county_area.data = np.ones(county_area.shape).astype('uint32')
 
         for i in range(58):
             area_in_window = flattened_window.rio.clip([shape.geometry[i]], shape.crs, drop=True)
-            area_in_window = np.sum(area_in_window.data, axis=(0, 1))
 
-            if area_in_window > 0:
-                result.append(counties[shape['GEOID'][i]])
+            area_total = county_area.rio.clip([shape.geometry[i]], shape.crs, drop=True)
+            area_total = np.sum(area_total.data, axis=(0, 1))
+
+            if np.sum(area_in_window.data, axis=(0, 1)) > 0:
+                percent = np.count_nonzero(area_in_window.data) / area_total
+                percent = f'{percent.astype(float):.2%}'
+                result.append(f"{counties[shape['GEOID'][i]]:<16}{percent:>6}")
 
     return result
