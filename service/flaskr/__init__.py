@@ -86,12 +86,7 @@ def query(start_date: int, end_date: int):
         plt.ioff()
         plt.imshow(flattened_window, cmap = 'hot')
 
-        # Currently, the colormap includes the background color of the burn-window which is represented as the top color in the scale
-        # making it hard to visualize the numbers for the burn-window in California
-        # A solution in the meantime is to reduce the top range (for a large amount of days)
         number_of_total_days_in_burn_window = end_date - start_date
-        if(number_of_total_days_in_burn_window >= 100):
-            number_of_total_days_in_burn_window = number_of_total_days_in_burn_window * 0.7
 
         plt.colorbar(ax = ax, label="Day", boundaries=np.linspace(0, number_of_total_days_in_burn_window))
         ax.remove()
