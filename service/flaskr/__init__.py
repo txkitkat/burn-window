@@ -100,20 +100,19 @@ def query(start_date: int, end_date: int):
         fig.savefig('legend.png', bbox_inches = 'tight', pad_inches = 0)
 
         matplotlib.rcParams['savefig.dpi'] = 300
-        matplotlib.image.imsave('window1.png', flattened_window, cmap='hot') 
-        whiten()
+        matplotlib.image.imsave('window-unclean.png', flattened_window, cmap='hot') 
+        remove_background()
         return 'success'
 
 
-def whiten():
-    print("Cleaning png.")
-    img = Image.open('window1.png')
+def remove_background():
+    img = Image.open('window-unclean.png')
     img = img.convert("RGBA")
     datas = img.getdata()
 
     newData = []
     for item in datas:
-        if item[0] == 255 and item[1] == 245 and item[2] == 240:
+        if item[0] == 255 and item[1] == 255 and item[2] == 255:
             newData.append((255,255,255,0))
         else:
             newData.append(item)
