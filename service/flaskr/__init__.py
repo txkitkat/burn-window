@@ -76,7 +76,7 @@ def query(start_date: int, end_date: int):
         flattened_window = xarray.DataArray(coords=[burn_windows.coords['lat'][:], burn_windows.coords['lon'][:]],
                                             dims=['lat', 'lon'])
 
-        flattened_window.data = np.sum(burn_windows.data[start_date:end_date, :, :], axis=0) # Sum data between a period of time (in days)
+        flattened_window.data = np.sum(burn_windows.data[start_date:end_date + 1, :, :], axis=0) # Sum data between a period of time (in days)
         flattened_window = flattened_window.astype('uint32')
 
         #Create Legend and Burn-Window Map
@@ -86,7 +86,7 @@ def query(start_date: int, end_date: int):
         plt.ioff()
         plt.imshow(flattened_window, cmap = 'hot')
 
-        number_of_total_days_in_burn_window = end_date - start_date
+        number_of_total_days_in_burn_window = end_date + 1 - start_date
 
         plt.colorbar(ax = ax, label="Day", boundaries=np.linspace(0, number_of_total_days_in_burn_window))
         ax.remove()
