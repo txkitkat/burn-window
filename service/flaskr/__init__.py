@@ -46,7 +46,7 @@ def create_app(test_config=None):
     @app.route('/image', methods=['GET'])
     @cross_origin()
     def get_image():
-        return send_from_directory('.', 'window.png')
+        return send_from_directory('.', 'window.svg')
 
     @app.route('/county', methods=['GET'])
     @cross_origin()
@@ -57,7 +57,7 @@ def create_app(test_config=None):
     @app.route('/legend', methods=['GET'])
     @cross_origin()
     def get_legend():
-        return send_from_directory('.', 'legend.png')
+        return send_from_directory('.', 'legend.svg')
 
     return app
 
@@ -85,17 +85,18 @@ def query(start_date: int, end_date: int):
         ax.axis('off')
         plt.ioff()
         plt.imshow(flattened_window, cmap = 'hot')
-
+        fig.savefig('window.svg', format='svg', dpi=1500)
+        allow_svg_to_stretch('window.svg')
         number_of_total_days_in_burn_window = end_date + 1 - start_date
 
         plt.colorbar(ax = ax, label="Day", boundaries=np.linspace(0, number_of_total_days_in_burn_window))
         ax.remove()
         #plt.show()
         plt.close(fig)
-        fig.savefig('legend.png', bbox_inches = 'tight', pad_inches = 0)
+        #fig.savefig('legend.png', bbox_inches = 'tight', pad_inches = 0, dpi = 1200)
+        fig.savefig('legend.svg', format='svg', dpi=1500)
+        allow_svg_to_stretch('legend.svg')
 
-        matplotlib.rcParams['savefig.dpi'] = 300
-        matplotlib.image.imsave('window-unclean.png', flattened_window, cmap='hot') 
         remove_background()
         return 'success'
 
@@ -113,4 +114,15 @@ def remove_background():
             newData.append(item)
     
     img.putdata(newData)
-    img.save("window.png", "PNG")
+    img.save("window.png", "PNG", dpi = (1200, 1200))
+
+def allow_svg_to_stretch(file_name):
+    opened_file = open(file_name, "r")
+    data_to_change = opened_file.read()
+    data_to_change = data_to_change.replace('<svg ', '<svg preserveAspectRatio="none" ')
+    opened_file.close()
+
+    opened_file = open(file_name, "w+")
+    opened_file.write(data_to_change)
+    opened_file.close()
+
