@@ -22,6 +22,8 @@ def create_app(test_config=None):
         DATABASE=os.path.join(app.instance_path, 'flaskr.sqlite'),
     )
 
+    app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+
     if test_config is None:
         app.config.from_pyfile('config.py', silent=True)
     else:
@@ -31,6 +33,12 @@ def create_app(test_config=None):
         os.makedirs(app.instance_path)
     except OSError:
         pass
+
+    #Disable caching for image and legend. Currently works on the Google Chrome and Microsoft Edge browsers without the need to checkmark disable cache option.
+    @app.after_request
+    def add_header(response):
+        response.headers["Cache-Control"]  = "no-store max-age=0"
+        return response
 
     @app.route('/query', methods=['GET'])
     @cross_origin()
