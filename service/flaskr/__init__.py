@@ -65,7 +65,7 @@ def create_app(test_config=None):
     @app.route('/legend', methods=['GET'])
     @cross_origin()
     def get_legend():
-        return send_from_directory('.', 'legend.svg')
+        return send_from_directory('.', 'legend.png')
 
     return app
 
@@ -101,7 +101,7 @@ def query(start_date: int, end_date: int):
         ax.remove()
         #plt.show()
         plt.close(fig)
-        #fig.savefig('legend.png', bbox_inches = 'tight', pad_inches = 0, dpi = 1200)
+        fig.savefig('legend.png', bbox_inches = 'tight', pad_inches = 0, dpi = 1200)
         fig.savefig('legend.svg', format='svg', dpi=1500)
         allow_svg_to_stretch('legend.svg')
 
