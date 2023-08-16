@@ -85,7 +85,12 @@ def query(start_date: int, end_date: int):
                                             dims=['lat', 'lon'])
 
         flattened_window.data = np.sum(burn_windows.data[start_date:end_date + 1, :, :], axis=0) # Sum data between a period of time (in days)
-        flattened_window = flattened_window.astype('uint32')
+        
+        #Remove white space by removing the highest value from data
+        flattened_window = flattened_window.astype('float')
+        largest_value = np.nanmax(flattened_window.data)
+        flattened_window.data[np.logical_and(~np.isnan(flattened_window.data), flattened_window.data == largest_value)] = np.nan
+
 
         #Create Legend and Burn-Window Map
         fig, ax = plt.subplots()
@@ -105,7 +110,7 @@ def query(start_date: int, end_date: int):
         fig.savefig('legend.svg', format='svg', dpi=1500)
         allow_svg_to_stretch('legend.svg')
 
-        remove_background()
+        #remove_background()
         return 'success'
 
 
