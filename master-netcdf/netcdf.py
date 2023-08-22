@@ -93,7 +93,7 @@ def filter_burn_window(temp):
 
 def create_burn_window(data_path, burn_windows):
     days = 0
-    years = [i for i in range(1979, 2021)]
+    years = [i for i in range(1979, 2024)]
 
     for year in years:
         print(f"Filtering {year} ---")

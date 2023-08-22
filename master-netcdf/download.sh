@@ -41,6 +41,9 @@ wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/rmin_2017.nc
 wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/rmin_2018.nc 
 wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/rmin_2019.nc 
 wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/rmin_2020.nc 
+wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/rmin_2021.nc 
+wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/rmin_2022.nc 
+wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/rmin_2023.nc 
 wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/rmax_1979.nc 
 wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/rmax_1980.nc 
 wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/rmax_1981.nc 
@@ -83,6 +86,9 @@ wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/rmax_2017.nc
 wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/rmax_2018.nc 
 wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/rmax_2019.nc 
 wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/rmax_2020.nc 
+wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/rmax_2021.nc 
+wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/rmax_2022.nc 
+wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/rmax_2023.nc 
 wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/tmmn_1979.nc 
 wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/tmmn_1980.nc 
 wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/tmmn_1981.nc 
@@ -125,6 +131,9 @@ wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/tmmn_2017.nc
 wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/tmmn_2018.nc 
 wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/tmmn_2019.nc 
 wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/tmmn_2020.nc 
+wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/tmmn_2021.nc 
+wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/tmmn_2022.nc 
+wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/tmmn_2023.nc 
 wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/tmmx_1979.nc 
 wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/tmmx_1980.nc 
 wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/tmmx_1981.nc 
@@ -167,6 +176,9 @@ wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/tmmx_2017.nc
 wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/tmmx_2018.nc 
 wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/tmmx_2019.nc 
 wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/tmmx_2020.nc 
+wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/tmmx_2021.nc 
+wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/tmmx_2022.nc 
+wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/tmmx_2023.nc 
 wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/vs_1979.nc 
 wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/vs_1980.nc 
 wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/vs_1981.nc 
@@ -209,3 +221,6 @@ wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/vs_2017.nc
 wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/vs_2018.nc 
 wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/vs_2019.nc 
 wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/vs_2020.nc 
+wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/vs_2021.nc 
+wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/vs_2022.nc 
+wget -nc -c -nd http://www.northwestknowledge.net/metdata/data/vs_2023.nc 
