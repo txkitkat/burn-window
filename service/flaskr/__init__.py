@@ -15,6 +15,12 @@ from .county import query_county
 
 from PIL import Image
 
+import geopandas
+from shapely.geometry import mapping
+from rasterio.mask import mask
+
+cali_shape = geopandas.read_file("./california_shp/CA_State_TIGER2016.shp")
+
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(
@@ -86,10 +92,21 @@ def query(start_date: int, end_date: int):
 
         flattened_window.data = np.sum(burn_windows.data[start_date:end_date + 1, :, :], axis=0) # Sum data between a period of time (in days)
         
-        #Remove white space by removing the highest value from data
-        flattened_window = flattened_window.astype('float')
-        largest_value = np.nanmax(flattened_window.data)
-        flattened_window.data[np.logical_and(~np.isnan(flattened_window.data), flattened_window.data == largest_value)] = np.nan
+        #Clip data to the outline of California using shapefile
+        flattened_window = flattened_window.rio.set_spatial_dims(x_dim='lon', y_dim='lat')
+        flattened_window.rio.write_crs("EPSG:4326", inplace=True)
+        print("HERE")
+        area_in_window = flattened_window.rio.clip(cali_shape.geometry.apply(mapping), cali_shape.crs, drop=True)
+
+        #Create duplicate and clip again 
+        duplicate = xarray.DataArray(
+            data=area_in_window.where(area_in_window.notnull(), -1),
+            coords=area_in_window.coords,  #Use the same coordinates as area_in_window
+            dims=["lat", "lon"]
+        )
+        duplicate = duplicate.rio.set_spatial_dims(x_dim='lon', y_dim='lat')
+        duplicate.rio.write_crs("EPSG:4326", inplace=True)
+        duplicate_clipped = duplicate.rio.clip(cali_shape.geometry.apply(mapping), cali_shape.crs, drop=True)
 
 
         #Create Legend and Burn-Window Map
@@ -97,7 +114,7 @@ def query(start_date: int, end_date: int):
         fig.patch.set_visible(False)
         ax.axis('off')
         plt.ioff()
-        plt.imshow(flattened_window, cmap = 'hot')
+        plt.imshow(duplicate_clipped, cmap = 'hot')
         fig.savefig('window.svg', format='svg', dpi=1500)
         allow_svg_to_stretch('window.svg')
         number_of_total_days_in_burn_window = end_date + 1 - start_date
@@ -110,24 +127,8 @@ def query(start_date: int, end_date: int):
         fig.savefig('legend.svg', format='svg', dpi=1500)
         allow_svg_to_stretch('legend.svg')
 
-        #remove_background()
         return 'success'
 
-
-def remove_background():
-    img = Image.open('window-unclean.png')
-    img = img.convert("RGBA")
-    datas = img.getdata()
-
-    newData = []
-    for item in datas:
-        if item[0] == 255 and item[1] == 255 and item[2] == 255:
-            newData.append((255,255,255,0))
-        else:
-            newData.append(item)
-    
-    img.putdata(newData)
-    img.save("window.png", "PNG", dpi = (1200, 1200))
 
 def allow_svg_to_stretch(file_name):
     opened_file = open(file_name, "r")
