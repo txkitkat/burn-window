@@ -1,6 +1,5 @@
 import os
 import glob
-import time
 
 import matplotlib
 matplotlib.use('Agg') #main threading issues with matplotlib
@@ -100,20 +99,21 @@ def query(start_date: int, end_date: int):
 
         #Create duplicate and clip again 
         duplicate = xarray.DataArray(
-            data=area_in_window.where(area_in_window.notnull(), -1),
+            data=area_in_window.where(area_in_window.notnull(), np.nan),
             coords=area_in_window.coords,  #Use the same coordinates as area_in_window
             dims=["lat", "lon"]
         )
+
         duplicate = duplicate.rio.set_spatial_dims(x_dim='lon', y_dim='lat')
         duplicate.rio.write_crs("EPSG:4326", inplace=True)
         duplicate_clipped = duplicate.rio.clip(cali_shape.geometry.apply(mapping), cali_shape.crs, drop=True)
-
 
         #Create Legend and Burn-Window Map
         fig, ax = plt.subplots()
         fig.patch.set_visible(False)
         ax.axis('off')
         plt.ioff()
+        
         plt.imshow(duplicate_clipped, cmap = 'hot')
         fig.savefig('window.svg', format='svg', dpi=1500)
         allow_svg_to_stretch('window.svg')
