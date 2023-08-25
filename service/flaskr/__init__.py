@@ -38,7 +38,7 @@ def create_app(test_config=None):
     # without the need to checkmark disable cache option.
     @app.after_request
     def add_header(response):
-        response.headers["Cache-Control"]  = "no-store max-age=0"
+        response.headers["Cache-Control"] = "no-store max-age=0"
         return response
 
     @app.route('/query', methods=['GET'])
@@ -110,12 +110,12 @@ def query(start_date: int, end_date: int):
         ax.axis('off')
         plt.ioff()
         
-        plt.imshow(duplicate_clipped, cmap = 'hot')
+        plt.imshow(duplicate_clipped, cmap='hot')
         fig.savefig('window.svg', format='svg', dpi=1500)
         allow_svg_to_stretch('window.svg')
         number_of_total_days_in_burn_window = end_date + 1 - start_date
 
-        plt.colorbar(ax = ax, label="Day", boundaries=np.linspace(0, number_of_total_days_in_burn_window))
+        plt.colorbar(ax=ax, label="Day", boundaries=np.linspace(0, number_of_total_days_in_burn_window))
         ax.remove()
         plt.close(fig)
         fig.savefig('legend.png', bbox_inches='tight', pad_inches=0, dpi=1200)
@@ -134,4 +134,3 @@ def allow_svg_to_stretch(file_name):
     opened_file = open(file_name, "w+")
     opened_file.write(data_to_change)
     opened_file.close()
-
