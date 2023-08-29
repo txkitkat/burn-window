@@ -115,7 +115,7 @@ def query(start_date: int, end_date: int):
         allow_svg_to_stretch('window.svg')
         number_of_total_days_in_burn_window = end_date + 1 - start_date
 
-        plt.colorbar(ax=ax, label="Day", boundaries=np.linspace(0, number_of_total_days_in_burn_window))
+        plt.colorbar(ax=ax, label="Days that burn windows are met", boundaries=np.linspace(0, number_of_total_days_in_burn_window))
         ax.remove()
         plt.close(fig)
         fig.savefig('legend.png', bbox_inches='tight', pad_inches=0, dpi=1200)
