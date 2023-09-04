@@ -71,9 +71,14 @@ counties = {
 
 def query_county(start, end):
     shape = geopandas.read_file("CA_Counties/CA_Counties_TIGER2016.shp")
-    result = []
 
-    with xarray.open_dataset("window.nc") as burn_windows_dataset:
+    county_result = process_window_data("window.nc", shape, start, end)
+    return county_result
+
+
+def process_window_data(file_name, shape, start, end):
+    result = []
+    with xarray.open_dataset(file_name) as burn_windows_dataset:
         burn_windows = burn_windows_dataset.__xarray_dataarray_variable__
         flattened_window = xarray.DataArray(coords=[burn_windows.coords['lat'][:], burn_windows.coords['lon'][:]],
                                             dims=['lat', 'lon'])

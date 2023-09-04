@@ -80,7 +80,11 @@ def cleanup():
 
 def query(start_date: int, end_date: int):
     print("Querying against netcdf.")
-    with xarray.open_dataset("window.nc") as burn_windows_dataset:
+    process_window_data("window.nc", "window", "legend", 'hot', start_date, end_date)
+    return 'success'
+    
+def process_window_data(file_name, window_plot_file_name, legend_file_name, colormap, start_date, end_date):
+    with xarray.open_dataset(file_name) as burn_windows_dataset:
         burn_windows = burn_windows_dataset.__xarray_dataarray_variable__
         flattened_window = xarray.DataArray(coords=[burn_windows.coords['lat'][:], burn_windows.coords['lon'][:]],
                                             dims=['lat', 'lon'])
@@ -110,19 +114,15 @@ def query(start_date: int, end_date: int):
         ax.axis('off')
         plt.ioff()
         
-        plt.imshow(duplicate_clipped, cmap='hot')
-        fig.savefig('window.svg', format='svg', dpi=1500)
-        allow_svg_to_stretch('window.svg')
+        plt.imshow(duplicate_clipped, cmap=colormap)
+        fig.savefig(window_plot_file_name + '.svg', format='svg', dpi=1500)
+        allow_svg_to_stretch(window_plot_file_name + '.svg')
         number_of_total_days_in_burn_window = end_date + 1 - start_date
 
         plt.colorbar(ax=ax, label="Days that burn windows are met", boundaries=np.linspace(0, number_of_total_days_in_burn_window))
         ax.remove()
         plt.close(fig)
-        fig.savefig('legend.png', bbox_inches='tight', pad_inches=0, dpi=1200)
-        fig.savefig('legend.svg', format='svg', dpi=1500)
-        allow_svg_to_stretch('legend.svg')
-
-        return 'success'
+        fig.savefig(legend_file_name + '.png', bbox_inches='tight', pad_inches=0, dpi=1200)
 
 
 def allow_svg_to_stretch(file_name):
