@@ -22,7 +22,7 @@ def clip_to_cali(path_to_nc):
     return nc
 
 
-def create_netcdf4_file(data_path):
+def create_burn_netcdf4_file(data_path):
     burn_windows = Dataset(f"temp-window.nc", "w", format="NETCDF4")
 
     # Create 3 dimensions for the netcdf4 file: lat, lon, and time
@@ -55,6 +55,40 @@ def create_netcdf4_file(data_path):
     clipped.close()
 
     return burn_windows
+
+def create_temperature_netcdf4_file(data_path):
+    yearly_temperatures = Dataset(f"temp-temperature.nc", "w", format="NETCDF4")
+
+    # Create 3 dimensions for the netcdf4 file: lat, lon, and time
+    yearly_temperatures.createDimension("lat", 227)  # latitude axis 227
+    yearly_temperatures.createDimension("lon", 249)  # longitude axis 249
+    yearly_temperatures.createDimension("day", None)  # unlimited axis (can be appended to)
+
+    lat = yearly_temperatures.createVariable('lat', np.float64, ('lat',))
+    lat.units = 'degrees_north'
+    lat.long_name = 'latitude'
+
+    lon = yearly_temperatures.createVariable('lon', np.float64, ('lon',))
+    lon.units = 'degrees_east'
+    lon.long_name = 'longitude'
+
+    day = yearly_temperatures.createVariable('day', np.float64, ('day',))
+    day.units = 'day'
+    day.long_name = 'day'
+
+    windows_var = yearly_temperatures.createVariable("temperature", "f", ("day", "lat", "lon",))
+    windows_var.units = "Kelvin"
+
+    # Get lat and lon values
+    temp = Dataset(f"{data_path}rmin_1979.nc", "r")
+    print(temp.variables["lat"])
+
+    clipped = clip_to_cali(f"{data_path}rmin_1979.nc")
+    yearly_temperatures.variables["lon"] = clipped.coords["lon"]
+    yearly_temperatures.variables["lat"] = clipped.coords["lat"]
+    clipped.close()
+
+    return yearly_temperatures
 
 
 def create_temp_file():
@@ -91,7 +125,7 @@ def filter_burn_window(temp):
     return temp
 
 
-def create_burn_window(data_path, burn_windows):
+def create_all_netcdf(data_path, burn_windows, yearly_temperatures):
     days = 0
     years = [i for i in range(1979, 2024)]
 
@@ -103,6 +137,7 @@ def create_burn_window(data_path, burn_windows):
         rmin = clip_to_cali(f"{data_path}rmin_{year}.nc")
         temp.variables["lower_relative_humidity"][:] = rmin.data
         burn_windows.variables["day"][:] = np.append(burn_windows.variables["day"][:], rmin.coords["day"].astype(np.float64))
+        print("Shape of rmin.data:", rmin.data.shape)
         close(rmin)
         print("Added rmin to temp")
 
@@ -113,13 +148,29 @@ def create_burn_window(data_path, burn_windows):
 
         tmmn = clip_to_cali(f"{data_path}tmmn_{year}.nc")
         temp.variables["lower_air_temperature"][:] = tmmn.data
-        close(tmmn)
+        print("Shape of tmmn.data:", tmmn.data.shape)
         print("Added tmmn to temp")
 
         tmmx = clip_to_cali(f"{data_path}tmmx_{year}.nc")
         temp.variables["upper_air_temperature"][:] = tmmx.data
-        close(tmmx)
+        print("Shape of tmmx.data:", tmmx.data.shape)
         print("Added tmmx to temp")
+
+        #average temperature min and max and add 365 days of data for each year
+        tmav = (tmmn + tmmx) / 2
+        print(len(tmav))
+        yearly_temperatures.variables["day"][:] = np.append(yearly_temperatures.variables["day"][:], tmav.coords["day"].astype(np.float64))
+        print(len(yearly_temperatures.variables["temperature"][days:days + len(temp.dimensions["day"]), :, :]))
+        print("Shape of tmav.data:", tmav.data.shape)
+        print("Shape of slice:", yearly_temperatures.variables["temperature"][days:days + len(temp.dimensions["day"]), :, :].shape)
+        print("Dtype of tmav.data:", tmav.data.dtype)
+        print("Dtype of slice:", yearly_temperatures.variables["temperature"].dtype)
+
+        yearly_temperatures.variables["temperature"][days:days + len(temp.dimensions["day"]), :, :] = tmav.data
+        close(tmmn)
+        close(tmmx)
+        close(tmav)
+        print("Added temperature data to yearly_temperature")
 
         vs = clip_to_cali(f"{data_path}vs_{year}.nc")
         temp.variables["wind_speed"][:] = vs.data
@@ -137,8 +188,11 @@ def create_burn_window(data_path, burn_windows):
         # About 365 days will be added for each year
         burn_windows.variables["window"][days:days + len(temp.dimensions["day"]), :, :] = temp_arr
         days += len(temp.dimensions["day"])
+        print(days)
 
         close(temp)
+
+    print("Finished year iteration")
 
     # Create a netcdf4 file named window.nc
     window_array = xarray.DataArray(
@@ -150,11 +204,23 @@ def create_burn_window(data_path, burn_windows):
     window_array.rio.set_spatial_dims(x_dim="lon", y_dim="lat")
     window_array.to_netcdf('window.nc')
 
+    #create a netcdf4 file named temperature.nc
+    temperature_array = xarray.DataArray(
+        coords=[yearly_temperatures.variables['day'][:], yearly_temperatures.variables['lat'][:], yearly_temperatures.variables['lon'][:]],
+        dims=['time', 'lat', 'lon'])
+    temperature_array.data = yearly_temperatures.variables['temperature'][:]
+    temperature_array = temperature_array.astype('uint32')
+    temperature_array.rio.write_crs("epsg:4326", inplace=True)
+    temperature_array.rio.set_spatial_dims(x_dim="lon", y_dim="lat")
+    temperature_array.to_netcdf('temperature.nc')
+
 
 def run(data_path):
-    burn_window = create_netcdf4_file(data_path)
-    create_burn_window(data_path, burn_window)
-    close(burn_window)
+    burn_windows = create_burn_netcdf4_file(data_path)
+    yearly_temperature = create_temperature_netcdf4_file(data_path)
+    create_all_netcdf(data_path, burn_windows, yearly_temperature)
+    close(burn_windows)
+    close(yearly_temperature)
 
 
 if __name__ == "__main__":
@@ -165,3 +231,7 @@ if __name__ == "__main__":
         os.remove("temp.nc")
     if os.path.exists("temp-window.nc"):
         os.remove("temp-window.nc")
+    if os.path.exists("temp-temperature.nc"):
+        os.remove("temp-temperature.nc")
+
+    
