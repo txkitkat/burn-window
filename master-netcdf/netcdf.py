@@ -137,7 +137,6 @@ def create_all_netcdf(data_path, burn_windows, yearly_temperatures):
         rmin = clip_to_cali(f"{data_path}rmin_{year}.nc")
         temp.variables["lower_relative_humidity"][:] = rmin.data
         burn_windows.variables["day"][:] = np.append(burn_windows.variables["day"][:], rmin.coords["day"].astype(np.float64))
-        print("Shape of rmin.data:", rmin.data.shape)
         close(rmin)
         print("Added rmin to temp")
 
@@ -148,28 +147,19 @@ def create_all_netcdf(data_path, burn_windows, yearly_temperatures):
 
         tmmn = clip_to_cali(f"{data_path}tmmn_{year}.nc")
         temp.variables["lower_air_temperature"][:] = tmmn.data
-        print("Shape of tmmn.data:", tmmn.data.shape)
+        close(tmmn)
         print("Added tmmn to temp")
 
         tmmx = clip_to_cali(f"{data_path}tmmx_{year}.nc")
         temp.variables["upper_air_temperature"][:] = tmmx.data
-        print("Shape of tmmx.data:", tmmx.data.shape)
+        close(tmmx)
         print("Added tmmx to temp")
 
         #average temperature min and max and add 365 days of data for each year
         tmav = (tmmn + tmmx) / 2
-        print(len(tmav))
-        yearly_temperatures.variables["day"][:] = np.append(yearly_temperatures.variables["day"][:], tmav.coords["day"].astype(np.float64))
-        print(len(yearly_temperatures.variables["temperature"][days:days + len(temp.dimensions["day"]), :, :]))
-        print("Shape of tmav.data:", tmav.data.shape)
-        print("Shape of slice:", yearly_temperatures.variables["temperature"][days:days + len(temp.dimensions["day"]), :, :].shape)
-        print("Dtype of tmav.data:", tmav.data.dtype)
-        print("Dtype of slice:", yearly_temperatures.variables["temperature"].dtype)
-
-        yearly_temperatures.variables["temperature"][days:days + len(temp.dimensions["day"]), :, :] = tmav.data
-        close(tmmn)
-        close(tmmx)
-        close(tmav)
+        tmav_F = (tmav - 273.15) * 9/5 + 32
+        yearly_temperatures.variables["day"][:] = np.append(yearly_temperatures.variables["day"][:], tmav_F.coords["day"].astype(np.float64))
+        yearly_temperatures.variables["temperature"][days:days + len(temp.dimensions["day"]), :, :] = tmav_F.data
         print("Added temperature data to yearly_temperature")
 
         vs = clip_to_cali(f"{data_path}vs_{year}.nc")

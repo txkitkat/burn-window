@@ -109,6 +109,7 @@ def process_window_data(file_name, window_plot_file_name, legend_file_name, colo
         else:
             # Average data between a period of time (in days)
             flattened_window.data = np.mean(burn_windows.data[start_date:end_date + 1, :, :], axis=0)
+            flattened_window = flattened_window.where(flattened_window != 0, np.nan)
         
         # Clip data to the outline of California using shapefile
         flattened_window = flattened_window.rio.set_spatial_dims(x_dim='lon', y_dim='lat')
