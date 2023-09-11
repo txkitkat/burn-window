@@ -53,7 +53,13 @@ def create_app(test_config=None):
     @app.route('/image', methods=['GET'])
     @cross_origin()
     def get_image():
-        return send_from_directory('.', 'window.svg')
+        return send_from_directory('.', 'burn_window.svg')
+    
+    @app.route('/temperature_image', methods=['GET'])
+    @cross_origin()
+    def get_temperature_image():
+        return send_from_directory('.', 'temperature_window.svg')
+
 
     @app.route('/county', methods=['GET'])
     @cross_origin()
@@ -64,7 +70,13 @@ def create_app(test_config=None):
     @app.route('/legend', methods=['GET'])
     @cross_origin()
     def get_legend():
-        return send_from_directory('.', 'legend.png')
+        return send_from_directory('.', 'burn_legend.png')
+    
+    @app.route('/temperature_legend', methods=['GET'])
+    @cross_origin()
+    def get_temperature_legend():
+        return send_from_directory('.', 'temperature_legend.png')
+
 
     return app
 
@@ -80,7 +92,8 @@ def cleanup():
 
 def query(start_date: int, end_date: int):
     print("Querying against netcdf.")
-    process_window_data("window.nc", "window", "legend", 'hot', start_date, end_date)
+    process_window_data("window.nc", "burn_window", "burn_legend", 'hot', start_date, end_date)
+    process_window_data("temperature.nc", "temperature_window", "temperature_legend", 'summer', start_date, end_date)
     return 'success'
     
 def process_window_data(file_name, window_plot_file_name, legend_file_name, colormap, start_date, end_date):
@@ -89,8 +102,13 @@ def process_window_data(file_name, window_plot_file_name, legend_file_name, colo
         flattened_window = xarray.DataArray(coords=[burn_windows.coords['lat'][:], burn_windows.coords['lon'][:]],
                                             dims=['lat', 'lon'])
 
-        # Sum data between a period of time (in days)
-        flattened_window.data = np.sum(burn_windows.data[start_date:end_date + 1, :, :], axis=0)
+        # Check if you want burn window or temperature
+        if file_name == "window.nc":
+            # Sum data between a period of time (in days)
+            flattened_window.data = np.sum(burn_windows.data[start_date:end_date + 1, :, :], axis=0)
+        else:
+            # Average data between a period of time (in days)
+            flattened_window.data = np.mean(burn_windows.data[start_date:end_date + 1, :, :], axis=0)
         
         # Clip data to the outline of California using shapefile
         flattened_window = flattened_window.rio.set_spatial_dims(x_dim='lon', y_dim='lat')
@@ -117,9 +135,12 @@ def process_window_data(file_name, window_plot_file_name, legend_file_name, colo
         plt.imshow(duplicate_clipped, cmap=colormap)
         fig.savefig(window_plot_file_name + '.svg', format='svg', dpi=1500)
         allow_svg_to_stretch(window_plot_file_name + '.svg')
-        number_of_total_days_in_burn_window = end_date + 1 - start_date
 
-        plt.colorbar(ax=ax, label="Days that burn windows are met", boundaries=np.linspace(0, number_of_total_days_in_burn_window))
+        if file_name == "window.nc":
+            number_of_total_days_in_burn_window = end_date + 1 - start_date
+            plt.colorbar(ax=ax, label="Days that burn windows are met", boundaries=np.linspace(0, number_of_total_days_in_burn_window))
+        else:
+            plt.colorbar(ax=ax, label="Average Temperature (°F)")
         ax.remove()
         plt.close(fig)
         fig.savefig(legend_file_name + '.png', bbox_inches='tight', pad_inches=0, dpi=1200)
