@@ -56,8 +56,8 @@ def create_burn_netcdf4_file(data_path):
 
     return burn_windows
 
-def create_temperature_netcdf4_file(data_path):
-    yearly_temperatures = Dataset(f"temp-temperature.nc", "w", format="NETCDF4")
+def create_temperature_netcdf4_file(data_path, data_name):
+    yearly_temperatures = Dataset(f"{data_name}-temp-temperature.nc", "w", format="NETCDF4")
 
     # Create 3 dimensions for the netcdf4 file: lat, lon, and time
     yearly_temperatures.createDimension("lat", 227)  # latitude axis 227
@@ -125,7 +125,7 @@ def filter_burn_window(temp):
     return temp
 
 
-def create_all_netcdf(data_path, burn_windows, yearly_temperatures):
+def create_all_netcdf(data_path, burn_windows, yearly_avg_temps, yearly_max_temps):
     days = 0
     years = [i for i in range(1979, 2024)]
 
@@ -155,12 +155,18 @@ def create_all_netcdf(data_path, burn_windows, yearly_temperatures):
         close(tmmx)
         print("Added tmmx to temp")
 
-        #average temperature min and max and add 365 days of data for each year
+        #average temperature min and max, convert to celsius, and add 365 days of data for each year
         tmav = (tmmn + tmmx) / 2
-        tmav_F = (tmav - 273.15) * 9/5 + 32
-        yearly_temperatures.variables["day"][:] = np.append(yearly_temperatures.variables["day"][:], tmav_F.coords["day"].astype(np.float64))
-        yearly_temperatures.variables["temperature"][days:days + len(temp.dimensions["day"]), :, :] = tmav_F.data
-        print("Added temperature data to yearly_temperature")
+        tmav_C = (tmav - 273.15)
+        yearly_avg_temps.variables["day"][:] = np.append(yearly_avg_temps.variables["day"][:], tmav_C.coords["day"].astype(np.float64))
+        yearly_avg_temps.variables["temperature"][days:days + len(temp.dimensions["day"]), :, :] = tmav_C.data
+        print("Added temperature data to yearly_avg_temps")
+
+        #highest temperature, convert to celsius, and add 365 days of data for each year
+        tmmx_C = tmmx - 273.15
+        yearly_max_temps.variables["day"][:] = np.append(yearly_max_temps.variables["day"][:], tmmx_C.coords["day"].astype(np.float64))
+        yearly_max_temps.variables["temperature"][days:days + len(temp.dimensions["day"]), :, :] = tmmx_C.data
+        print("Added temperature data to yearly_max_temps")
 
         vs = clip_to_cali(f"{data_path}vs_{year}.nc")
         temp.variables["wind_speed"][:] = vs.data
@@ -195,22 +201,33 @@ def create_all_netcdf(data_path, burn_windows, yearly_temperatures):
     window_array.to_netcdf('window.nc')
 
     #create a netcdf4 file named temperature.nc
-    temperature_array = xarray.DataArray(
-        coords=[yearly_temperatures.variables['day'][:], yearly_temperatures.variables['lat'][:], yearly_temperatures.variables['lon'][:]],
+    temperature_avg_array = xarray.DataArray(
+        coords=[yearly_avg_temps.variables['day'][:], yearly_avg_temps.variables['lat'][:], yearly_avg_temps.variables['lon'][:]],
         dims=['time', 'lat', 'lon'])
-    temperature_array.data = yearly_temperatures.variables['temperature'][:]
-    temperature_array = temperature_array.astype('uint32')
-    temperature_array.rio.write_crs("epsg:4326", inplace=True)
-    temperature_array.rio.set_spatial_dims(x_dim="lon", y_dim="lat")
-    temperature_array.to_netcdf('temperature.nc')
+    temperature_avg_array.data = yearly_avg_temps.variables['temperature'][:]
+    temperature_avg_array = temperature_avg_array.astype('uint32')
+    temperature_avg_array.rio.write_crs("epsg:4326", inplace=True)
+    temperature_avg_array.rio.set_spatial_dims(x_dim="lon", y_dim="lat")
+    temperature_avg_array.to_netcdf('temperature_avg.nc')
 
+        #create a netcdf4 file named temperature.nc
+    temperature_max_array = xarray.DataArray(
+        coords=[yearly_max_temps.variables['day'][:], yearly_max_temps.variables['lat'][:], yearly_max_temps.variables['lon'][:]],
+        dims=['time', 'lat', 'lon'])
+    temperature_max_array.data = yearly_max_temps.variables['temperature'][:]
+    temperature_max_array = temperature_max_array.astype('uint32')
+    temperature_max_array.rio.write_crs("epsg:4326", inplace=True)
+    temperature_max_array.rio.set_spatial_dims(x_dim="lon", y_dim="lat")
+    temperature_max_array.to_netcdf('temperature_max.nc')
 
 def run(data_path):
     burn_windows = create_burn_netcdf4_file(data_path)
-    yearly_temperature = create_temperature_netcdf4_file(data_path)
-    create_all_netcdf(data_path, burn_windows, yearly_temperature)
+    yearly_avg_temps = create_temperature_netcdf4_file(data_path, "avg")
+    yearly_max_temps = create_temperature_netcdf4_file(data_path, "max")
+    create_all_netcdf(data_path, burn_windows, yearly_avg_temps, yearly_max_temps)
     close(burn_windows)
-    close(yearly_temperature)
+    close(yearly_avg_temps)
+    close(yearly_max_temps)
 
 
 if __name__ == "__main__":
@@ -223,5 +240,9 @@ if __name__ == "__main__":
         os.remove("temp-window.nc")
     if os.path.exists("temp-temperature.nc"):
         os.remove("temp-temperature.nc")
+    if os.path.exists("avg-temp-temperature.nc"):
+        os.remove("avg-temp-temperature.nc")
+    if os.path.exists("max-temp-temperature.nc"):
+        os.remove("max-temp-temperature.nc")
 
     

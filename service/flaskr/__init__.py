@@ -50,16 +50,20 @@ def create_app(test_config=None):
             return query(int(start_date), int(end_date))
         return 'failed'
 
-    @app.route('/image', methods=['GET'])
+    @app.route('/burn_window_image', methods=['GET'])
     @cross_origin()
-    def get_image():
+    def get_burn_image():
         return send_from_directory('.', 'burn_window.svg')
     
-    @app.route('/temperature_image', methods=['GET'])
+    @app.route('/temperature_avg_image', methods=['GET'])
+    @cross_origin() 
+    def get_temperature_avg_image():
+        return send_from_directory('.', 'temperature_avg.svg')
+    
+    @app.route('/temperature_max_image', methods=['GET'])
     @cross_origin()
-    def get_temperature_image():
-        return send_from_directory('.', 'temperature_window.svg')
-
+    def get_temperature_max_image():
+        return send_from_directory('.', 'temperature_max.svg')
 
     @app.route('/county', methods=['GET'])
     @cross_origin()
@@ -72,10 +76,15 @@ def create_app(test_config=None):
     def get_legend():
         return send_from_directory('.', 'burn_legend.png')
     
-    @app.route('/temperature_legend', methods=['GET'])
+    @app.route('/temperature_avg_legend', methods=['GET'])
     @cross_origin()
-    def get_temperature_legend():
-        return send_from_directory('.', 'temperature_legend.png')
+    def get_temperature_avg_legend():
+        return send_from_directory('.', 'temperature_avg_legend.png')
+
+    @app.route('/temperature_max_legend', methods=['GET'])
+    @cross_origin()
+    def get_temperature_max_legend():
+        return send_from_directory('.', 'temperature_max_legend.png')
 
 
     return app
@@ -93,7 +102,8 @@ def cleanup():
 def query(start_date: int, end_date: int):
     print("Querying against netcdf.")
     process_window_data("window.nc", "burn_window", "burn_legend", 'hot', start_date, end_date)
-    process_window_data("temperature.nc", "temperature_window", "temperature_legend", 'summer', start_date, end_date)
+    process_window_data("temperature_avg.nc", "temperature_avg", "temperature_avg_legend", 'copper', start_date, end_date)
+    process_window_data("temperature_max.nc", "temperature_max", "temperature_max_legend", 'copper', start_date, end_date)
     return 'success'
     
 def process_window_data(file_name, window_plot_file_name, legend_file_name, colormap, start_date, end_date):
@@ -106,9 +116,12 @@ def process_window_data(file_name, window_plot_file_name, legend_file_name, colo
         if file_name == "window.nc":
             # Sum data between a period of time (in days)
             flattened_window.data = np.sum(burn_windows.data[start_date:end_date + 1, :, :], axis=0)
-        else:
+        elif file_name == "temperature_avg.nc":
             # Average data between a period of time (in days)
             flattened_window.data = np.mean(burn_windows.data[start_date:end_date + 1, :, :], axis=0)
+            flattened_window = flattened_window.where(flattened_window != 0, np.nan)
+        elif file_name == "temperature_max.nc":
+            flattened_window.data = np.max(burn_windows.data[start_date:end_date + 1, :, :], axis=0)
             flattened_window = flattened_window.where(flattened_window != 0, np.nan)
         
         # Clip data to the outline of California using shapefile
@@ -140,8 +153,10 @@ def process_window_data(file_name, window_plot_file_name, legend_file_name, colo
         if file_name == "window.nc":
             number_of_total_days_in_burn_window = end_date + 1 - start_date
             plt.colorbar(ax=ax, label="Days that burn windows are met", boundaries=np.linspace(0, number_of_total_days_in_burn_window))
-        else:
-            plt.colorbar(ax=ax, label="Average Temperature (°F)")
+        elif file_name == "temperature_avg.nc":
+            plt.colorbar(ax=ax, label="Average Temperature (°C)")
+        elif file_name == "temperature_max.nc":
+            plt.colorbar(ax=ax, label="Max Temperature (°C)")
         ax.remove()
         plt.close(fig)
         fig.savefig(legend_file_name + '.png', bbox_inches='tight', pad_inches=0, dpi=1200)
