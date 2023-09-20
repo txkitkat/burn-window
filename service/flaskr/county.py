@@ -98,8 +98,8 @@ def process_window_data(file_name, shape, start, end):
             area_total = np.sum(area_total.data, axis=(0, 1))
 
             if np.sum(area_in_window.data, axis=(0, 1)) > 0:
-                percent = np.count_nonzero(area_in_window.data) / area_total
+                percent = np.sum(area_in_window.data) / area_total / (end - start + 1)
                 percent = f'{percent.astype(float):.2%}'
-                result.append(f"{counties[shape['GEOID'][i]]:<16}{percent:>6}")
+                result.append(f"{counties[shape['GEOID'][i]]:<17}{percent:>6}")
 
     return result
