@@ -49,43 +49,55 @@ def create_app(test_config=None):
         if start_date is not None and end_date is not None:
             return query(int(start_date), int(end_date))
         return 'failed'
-
-    @app.route('/burn_window_image', methods=['GET'])
-    @cross_origin()
-    def get_burn_image():
-        return send_from_directory('.', 'burn_window.svg')
     
-    @app.route('/temperature_avg_image', methods=['GET'])
-    @cross_origin() 
-    def get_temperature_avg_image():
-        return send_from_directory('.', 'temperature_avg.svg')
-    
-    @app.route('/temperature_max_image', methods=['GET'])
-    @cross_origin()
-    def get_temperature_max_image():
-        return send_from_directory('.', 'temperature_max.svg')
-
     @app.route('/county', methods=['GET'])
     @cross_origin()
     def county():
         start_date, end_date = request.args.get('start_date'), request.args.get('end_date')
         return query_county(int(start_date), int(end_date))
 
-    @app.route('/legend', methods=['GET'])
+    # Burn resources
+    @app.route('/burn_window_image', methods=['GET'])
     @cross_origin()
-    def get_legend():
+    def get_burn_image():
+        return send_from_directory('.', 'burn_window.svg')
+    
+    @app.route('/burn_legend', methods=['GET'])
+    @cross_origin()
+    def get_burn_legend():
         return send_from_directory('.', 'burn_legend.png')
     
+    # Temperature resources
+    @app.route('/temperature_avg_image', methods=['GET'])
+    @cross_origin() 
+    def get_temperature_avg_image():
+        return send_from_directory('.', 'temperature_avg.svg')
+
     @app.route('/temperature_avg_legend', methods=['GET'])
     @cross_origin()
     def get_temperature_avg_legend():
         return send_from_directory('.', 'temperature_avg_legend.png')
-
+    
+    @app.route('/temperature_max_image', methods=['GET'])
+    @cross_origin()
+    def get_temperature_max_image():
+        return send_from_directory('.', 'temperature_max.svg')
+    
     @app.route('/temperature_max_legend', methods=['GET'])
     @cross_origin()
     def get_temperature_max_legend():
         return send_from_directory('.', 'temperature_max_legend.png')
 
+    #Humidity resources
+    @app.route('/humidity_min_image', methods=['GET'])
+    @cross_origin()
+    def get_humidity_min_image():
+        return send_from_directory('.', 'humidity_min.svg')
+
+    @app.route('/humidity_min_legend', methods=['GET'])
+    @cross_origin()
+    def get_humidity_min_legend():
+        return send_from_directory('.', 'humidity_min_legend.png')
 
     return app
 
@@ -104,30 +116,39 @@ def query(start_date: int, end_date: int):
     process_window_data("window.nc", "burn_window", "burn_legend", 'hot', start_date, end_date)
     process_window_data("temperature_avg.nc", "temperature_avg", "temperature_avg_legend", 'copper', start_date, end_date)
     process_window_data("temperature_max.nc", "temperature_max", "temperature_max_legend", 'copper', start_date, end_date)
+    process_window_data("humidity_min.nc", "humidity_min", "humidity_min_legend", 'Purples', start_date, end_date)
     return 'success'
     
 def process_window_data(file_name, window_plot_file_name, legend_file_name, colormap, start_date, end_date):
-    with xarray.open_dataset(file_name) as burn_windows_dataset:
-        burn_windows = burn_windows_dataset.__xarray_dataarray_variable__
-        flattened_window = xarray.DataArray(coords=[burn_windows.coords['lat'][:], burn_windows.coords['lon'][:]],
+    with xarray.open_dataset(file_name) as environmental_dataset:
+        environmental_data = environmental_dataset.__xarray_dataarray_variable__
+        flattened_data = xarray.DataArray(coords=[environmental_data.coords['lat'][:], environmental_data.coords['lon'][:]],
                                             dims=['lat', 'lon'])
 
         # Check if you want burn window or temperature
         if file_name == "window.nc":
             # Sum data between a period of time (in days)
-            flattened_window.data = np.sum(burn_windows.data[start_date:end_date + 1, :, :], axis=0)
+            flattened_data.data = np.sum(environmental_data.data[start_date:end_date + 1, :, :], axis=0)
         elif file_name == "temperature_avg.nc":
+            print("temp avg size", environmental_data.data[start_date:end_date + 1, :, :].size)
+
             # Average data between a period of time (in days)
-            flattened_window.data = np.mean(burn_windows.data[start_date:end_date + 1, :, :], axis=0)
-            flattened_window = flattened_window.where(flattened_window != 0, np.nan)
+            flattened_data.data = np.mean(environmental_data.data[start_date:end_date + 1, :, :], axis=0)
+            flattened_data = flattened_data.where(flattened_data != 0, np.nan)
         elif file_name == "temperature_max.nc":
-            flattened_window.data = np.max(burn_windows.data[start_date:end_date + 1, :, :], axis=0)
-            flattened_window = flattened_window.where(flattened_window != 0, np.nan)
+            print("temp max size", environmental_data.data[start_date:end_date + 1, :, :].size)
+
+            flattened_data.data = np.max(environmental_data.data[start_date:end_date + 1, :, :], axis=0)
+            flattened_data = flattened_data.where(flattened_data != 0, np.nan)
+        elif file_name == "humidity_min.nc":
+            print("humidity size", environmental_data.data[start_date:end_date + 1, :, :].size)
+            flattened_data.data = np.min(environmental_data.data[start_date:end_date + 1, :, :], axis=0)
+            flattened_data = flattened_data.where(flattened_data != 0, np.nan)
         
         # Clip data to the outline of California using shapefile
-        flattened_window = flattened_window.rio.set_spatial_dims(x_dim='lon', y_dim='lat')
-        flattened_window.rio.write_crs("EPSG:4326", inplace=True)
-        area_in_window = flattened_window.rio.clip(cali_shape.geometry.apply(mapping), cali_shape.crs, drop=True)
+        flattened_data = flattened_data.rio.set_spatial_dims(x_dim='lon', y_dim='lat')
+        flattened_data.rio.write_crs("EPSG:4326", inplace=True)
+        area_in_window = flattened_data.rio.clip(cali_shape.geometry.apply(mapping), cali_shape.crs, drop=True)
 
         # Create duplicate and clip again
         duplicate = xarray.DataArray(
@@ -140,7 +161,7 @@ def process_window_data(file_name, window_plot_file_name, legend_file_name, colo
         duplicate.rio.write_crs("EPSG:4326", inplace=True)
         duplicate_clipped = duplicate.rio.clip(cali_shape.geometry.apply(mapping), cali_shape.crs, drop=True)
 
-        # Create Legend and Burn-Window Map
+        # Create Legend and Layer Map
         fig, ax = plt.subplots()
         fig.patch.set_visible(False)
         ax.axis('off')
@@ -157,6 +178,8 @@ def process_window_data(file_name, window_plot_file_name, legend_file_name, colo
             plt.colorbar(ax=ax, label="Average Temperature (°C)")
         elif file_name == "temperature_max.nc":
             plt.colorbar(ax=ax, label="Max Temperature (°C)")
+        elif file_name == "humidity_min.nc":
+            plt.colorbar(ax=ax, label="Min Humidity (%)")
         ax.remove()
         plt.close(fig)
         fig.savefig(legend_file_name + '.png', bbox_inches='tight', pad_inches=0, dpi=1200)
