@@ -15,13 +15,6 @@ def clip_to_cali(path_to_nc):
     nc = xarray.open_dataarray(path_to_nc)
     nc.rio.set_spatial_dims(x_dim="lon", y_dim="lat", inplace=True)
     nc.rio.write_crs("EPSG:4326", inplace=True)
-    variables = nc
-
-    # Print the variable names
-    #print("Available Variables:")
-    #for var in variables:
-    #    print(var)
-
 
     # Without this, the nc files would cover the entire US
     # Use the shapefile to clip to California only for all nc files
@@ -168,7 +161,7 @@ def filter_burn_window(temp):
 
 def create_all_netcdf(data_path, burn_windows, yearly_avg_temps, yearly_max_temps, yearly_min_humidity):
     days = 0
-    years = [i for i in range(1979, 1981)]
+    years = [i for i in range(1979, 2024)]
 
     for year in years:
         print(f"Filtering {year} ---")
@@ -185,25 +178,16 @@ def create_all_netcdf(data_path, burn_windows, yearly_avg_temps, yearly_max_temp
         yearly_min_humidity.variables["day"][:] = np.append(yearly_min_humidity.variables["day"][:], rmin.coords["day"].astype(np.float64))
         yearly_min_humidity.variables["humidity"][days:days + len(temp.dimensions["day"]), :, :] = rmin.data
         print("Added humidity data to yearly_max_temps")
-        print(yearly_min_humidity.variables["humidity"][days:days + len(temp.dimensions["day"]), :, :].size)
-        #print(rmin)
-# Print the variable names
-        #print("Available Variables:")
-        #for var in rmin:
-        #    print(var)
-
 
         rmax = clip_to_cali(f"{data_path}rmax_{year}.nc")
         temp.variables["upper_relative_humidity"][:] = rmax.data
         close(rmax)
         print("Added rmax to temp")
-        #print(rmax.variables["relative_humidity"])
 
         tmmn = clip_to_cali(f"{data_path}tmmn_{year}.nc")
         temp.variables["lower_air_temperature"][:] = tmmn.data
         close(tmmn)
         print("Added tmmn to temp")
-        print(tmmn.data[1])
 
         tmmx = clip_to_cali(f"{data_path}tmmx_{year}.nc")
         temp.variables["upper_air_temperature"][:] = tmmx.data
@@ -216,7 +200,6 @@ def create_all_netcdf(data_path, burn_windows, yearly_avg_temps, yearly_max_temp
         yearly_avg_temps.variables["day"][:] = np.append(yearly_avg_temps.variables["day"][:], tmav_C.coords["day"].astype(np.float64))
         yearly_avg_temps.variables["temperature"][days:days + len(temp.dimensions["day"]), :, :] = tmav_C.data
         print("Added temperature data to yearly_avg_temps")
-        print("TEMP SIZE", yearly_avg_temps.variables["temperature"][days:days + len(temp.dimensions["day"]), :, :].size)
 
         # Highest temperature, convert to celsius, and add 365 days of data for each year
         tmmx_C = tmmx - 273.15
@@ -285,7 +268,6 @@ def create_all_netcdf(data_path, burn_windows, yearly_avg_temps, yearly_max_temp
     humidity_min_array.rio.write_crs("epsg:4326", inplace=True)
     humidity_min_array.rio.set_spatial_dims(x_dim="lon", y_dim="lat")
     humidity_min_array.to_netcdf('humidity_min.nc')
-    print("SIZE OF HUM", humidity_min_array.data.size)
 
 
 def run(data_path):

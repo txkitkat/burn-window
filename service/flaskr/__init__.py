@@ -130,14 +130,10 @@ def process_window_data(file_name, window_plot_file_name, legend_file_name, colo
             # Sum data between a period of time (in days)
             flattened_data.data = np.sum(environmental_data.data[start_date:end_date + 1, :, :], axis=0)
         elif file_name == "temperature_avg.nc":
-            print("temp avg size", environmental_data.data[start_date:end_date + 1, :, :].size)
-
             # Average data between a period of time (in days)
             flattened_data.data = np.mean(environmental_data.data[start_date:end_date + 1, :, :], axis=0)
             flattened_data = flattened_data.where(flattened_data != 0, np.nan)
         elif file_name == "temperature_max.nc":
-            print("temp max size", environmental_data.data[start_date:end_date + 1, :, :].size)
-
             flattened_data.data = np.max(environmental_data.data[start_date:end_date + 1, :, :], axis=0)
             flattened_data = flattened_data.where(flattened_data != 0, np.nan)
         elif file_name == "humidity_min.nc":
