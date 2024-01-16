@@ -3,7 +3,10 @@ import warnings
 import rioxarray
 import geopandas
 import numpy as np
+import boto3
+import io
 
+deploying_production = False
 
 warnings.simplefilter("ignore", category=RuntimeWarning)
 
@@ -68,17 +71,40 @@ counties = {
     '06115': 'Yuba'
 }
 
+s3 = boto3.client('s3')
+
+def get_file_from_s3(bucket_name, file_name):
+    try:
+        response = s3.get_object(Bucket=bucket_name, Key=file_name)
+        body = response.get('Body')
+
+        if body is not None:
+            return io.BytesIO(response['Body'].read())
+        else:
+            print("Error: Response body is None.")
+            return None
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
 
 def query_county(start, end):
-    shape = geopandas.read_file("CA_Counties/CA_Counties_TIGER2016.shp")
+    shape = geopandas.read_file("./flaskr/CA_Counties/CA_Counties_TIGER2016.shp")
 
     county_result = process_window_data("window.nc", shape, start, end)
     return county_result
 
 
 def process_window_data(file_name, shape, start, end):
+        # Check if in deployment
+    if deploying_production:
+        # Fetch a file from S3
+        bucket_name = 'fire-map-dashboard-geospatial-data'
+        data_bytes = get_file_from_s3(bucket_name, file_name)
+    else:
+        data_bytes = "./flaskr/" + file_name
+
     result = []
-    with xarray.open_dataset(file_name) as burn_windows_dataset:
+    with xarray.open_dataset(data_bytes, engine="h5netcdf") as burn_windows_dataset:
         burn_windows = burn_windows_dataset.__xarray_dataarray_variable__
         flattened_window = xarray.DataArray(coords=[burn_windows.coords['lat'][:], burn_windows.coords['lon'][:]],
                                             dims=['lat', 'lon'])

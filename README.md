@@ -23,9 +23,3 @@ This service requires the environment to contain the FLASK_APP variable equal to
 export FLASK_APP=flaskr
 export FLASK_ENV=production
 flask run
-```
-Alternatively, you can follow these steps to run the flask application:
-```
-cd service/flaskr
-flask --app __init__ run
-```

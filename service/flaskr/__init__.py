@@ -10,14 +10,29 @@ import matplotlib.pyplot as plt
 from .county import query_county
 import geopandas
 from shapely.geometry import mapping
+import boto3
+import io
+from flask_cors import CORS
+
+deploying_production = False
 
 # main threading issues with matplotlib
 matplotlib.use('Agg')
-cali_shape = geopandas.read_file("./california_shp/CA_State_TIGER2016.shp")
+cali_shape = geopandas.read_file("./flaskr/california_shp/CA_State_TIGER2016.shp")
 
+s3 = boto3.client('s3')
+
+def get_file_from_s3(bucket_name, file_name):
+    try:
+        response = s3.get_object(Bucket=bucket_name, Key=file_name)
+        return io.BytesIO(response['Body'].read())
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
 
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
+    CORS(app)
     app.config.from_mapping(
         SECRET_KEY='dev',
         DATABASE=os.path.join(app.instance_path, 'flaskr.sqlite'),
@@ -120,7 +135,16 @@ def query(start_date: int, end_date: int):
     return 'success'
     
 def process_window_data(file_name, window_plot_file_name, legend_file_name, colormap, start_date, end_date):
-    with xarray.open_dataset(file_name) as environmental_dataset:
+
+    # Check if in deployment
+    if deploying_production:
+        # Fetch a file from S3
+        bucket_name = 'fire-map-dashboard-geospatial-data'
+        data_bytes = get_file_from_s3(bucket_name, file_name)
+    else:
+        data_bytes = "./flaskr/" + file_name
+    
+    with xarray.open_dataset(data_bytes, engine="h5netcdf") as environmental_dataset:
         environmental_data = environmental_dataset.__xarray_dataarray_variable__
         flattened_data = xarray.DataArray(coords=[environmental_data.coords['lat'][:], environmental_data.coords['lon'][:]],
                                             dims=['lat', 'lon'])
