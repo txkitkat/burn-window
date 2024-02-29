@@ -75,44 +75,44 @@ def create_app(test_config=None):
     @app.route('/burn_window_image', methods=['GET'])
     @cross_origin()
     def get_burn_image():
-        return send_from_directory('.', 'burn_window.svg')
+        return send_from_directory('./flaskr', 'burn_window.svg')
     
     @app.route('/burn_legend', methods=['GET'])
     @cross_origin()
     def get_burn_legend():
-        return send_from_directory('.', 'burn_legend.png')
+        return send_from_directory('./flaskr', 'burn_legend.png')
     
     # Temperature resources
     @app.route('/temperature_avg_image', methods=['GET'])
     @cross_origin() 
     def get_temperature_avg_image():
-        return send_from_directory('.', 'temperature_avg.svg')
+        return send_from_directory('./flaskr', 'temperature_avg.svg')
 
     @app.route('/temperature_avg_legend', methods=['GET'])
     @cross_origin()
     def get_temperature_avg_legend():
-        return send_from_directory('.', 'temperature_avg_legend.png')
+        return send_from_directory('./flaskr', 'temperature_avg_legend.png')
     
     @app.route('/temperature_max_image', methods=['GET'])
     @cross_origin()
     def get_temperature_max_image():
-        return send_from_directory('.', 'temperature_max.svg')
+        return send_from_directory('./flaskr', 'temperature_max.svg')
     
     @app.route('/temperature_max_legend', methods=['GET'])
     @cross_origin()
     def get_temperature_max_legend():
-        return send_from_directory('.', 'temperature_max_legend.png')
+        return send_from_directory('./flaskr', 'temperature_max_legend.png')
 
     #Humidity resources
     @app.route('/humidity_min_image', methods=['GET'])
     @cross_origin()
     def get_humidity_min_image():
-        return send_from_directory('.', 'humidity_min.svg')
+        return send_from_directory('./flaskr', 'humidity_min.svg')
 
     @app.route('/humidity_min_legend', methods=['GET'])
     @cross_origin()
     def get_humidity_min_legend():
-        return send_from_directory('.', 'humidity_min_legend.png')
+        return send_from_directory('./flaskr', 'humidity_min_legend.png')
 
     return app
 
@@ -188,8 +188,8 @@ def process_window_data(file_name, window_plot_file_name, legend_file_name, colo
         plt.ioff()
         
         plt.imshow(duplicate_clipped, cmap=colormap)
-        fig.savefig(window_plot_file_name + '.svg', format='svg', dpi=1500)
-        allow_svg_to_stretch(window_plot_file_name + '.svg')
+        fig.savefig('./flaskr/' + window_plot_file_name + '.svg', format='svg', dpi=1500)
+        allow_svg_to_stretch('./flaskr/' + window_plot_file_name + '.svg')
 
         if file_name == "window.nc":
             number_of_total_days_in_burn_window = end_date + 1 - start_date
@@ -202,7 +202,7 @@ def process_window_data(file_name, window_plot_file_name, legend_file_name, colo
             plt.colorbar(ax=ax, label="Min Humidity (%)")
         ax.remove()
         plt.close(fig)
-        fig.savefig(legend_file_name + '.png', bbox_inches='tight', pad_inches=0, dpi=1200)
+        fig.savefig('./flaskr/' + legend_file_name + '.png', bbox_inches='tight', pad_inches=0, dpi=1200)
 
 
 def allow_svg_to_stretch(file_name):
