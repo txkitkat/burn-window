@@ -21,7 +21,7 @@ deploying_production = False
 
 # main threading issues with matplotlib
 matplotlib.use('Agg')
-cali_shape = geopandas.read_file("./flaskr/california_shp/CA_State_TIGER2016.shp")
+cali_shape = geopandas.read_file("./california_shp/CA_State_TIGER2016.shp")
 
 s3 = boto3.client('s3')
 
@@ -145,14 +145,14 @@ def process_window_data(file_name, window_plot_file_name, legend_file_name, colo
         bucket_name = 'fire-map-dashboard-geospatial-data'
         data_bytes = get_file_from_s3(bucket_name, file_name)
     else:
-        data_bytes = "./flaskr/" + file_name
+        data_bytes = "./" + file_name
 
     unx_offset = time.mktime(datetime.datetime(1979,1,1).timetuple()) #- (8*60*60)
-
-
+    print(start_date)
     start_time_unx = start_date*24*60*60 + unx_offset
     end_time_unx = end_date*24*60*60 + unx_offset
 
+    print(start_time_unx)
     start_dt = datetime.datetime.utcfromtimestamp(start_time_unx)
     end_dt = datetime.datetime.utcfromtimestamp(end_time_unx)
 
@@ -177,6 +177,8 @@ def process_window_data(file_name, window_plot_file_name, legend_file_name, colo
 
 
     flattened_data = None
+    total_days = 0
+
 
     for file in range(start_file, end_file, 5):
        print(start_file, ", ", end_file, ", ", file)
@@ -190,6 +192,7 @@ def process_window_data(file_name, window_plot_file_name, legend_file_name, colo
                 start_idx = first_idx
            if file == end_file - 5:
                 end_idx = last_idx
+           total_days += end_idx - start_idx
 
            first_file = False
            if flattened_data is None:
@@ -223,12 +226,13 @@ def process_window_data(file_name, window_plot_file_name, legend_file_name, colo
 
            elif file_name == "temperature_avg.nc":
                 # Average data between a period of time (in days)
+                # We sum for now and then divide by # of days on the last one
 
-                #TODO: calculate mean correctly (just overrides for now)
+                file_data = np.sum(environmental_data.data[start_idx:end_idx + 1, :, :], axis=0)
                 if first_file:
-                    flattened_data.data = np.mean(environmental_data.data[start_idx:end_idx + 1, :, :], axis=0)
+                    flattened_data.data = file_data
                 else:
-                    pass #TODO
+                    flattened_data.data += file_data
 
 
                 #flattened_data = flattened_data.where(flattened_data != 0, np.nan)
@@ -253,6 +257,10 @@ def process_window_data(file_name, window_plot_file_name, legend_file_name, colo
 
                 #flattened_data = flattened_data.where(flattened_data != 0, np.nan)
        
+
+    if file_name == "temperature_avg.nc":
+        flattened_data /= total_days
+
     if file_name != "window.nc":
         flattened_data = flattened_data.where(flattened_data != 0, np.nan)
 

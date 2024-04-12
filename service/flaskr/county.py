@@ -88,20 +88,21 @@ def get_file_from_s3(bucket_name, file_name):
         return None
 
 def query_county(start, end):
-    shape = geopandas.read_file("./flaskr/CA_Counties/CA_Counties_TIGER2016.shp")
+    shape = geopandas.read_file("./CA_Counties/CA_Counties_TIGER2016.shp")
 
     county_result = process_window_data("window.nc", shape, start, end)
     return county_result
 
 
 def process_window_data(file_name, shape, start, end):
+    print("wrong one")
         # Check if in deployment
     if deploying_production:
         # Fetch a file from S3
         bucket_name = 'fire-map-dashboard-geospatial-data'
         data_bytes = get_file_from_s3(bucket_name, file_name)
     else:
-        data_bytes = "./flaskr/" + file_name
+        data_bytes = "./" + file_name
 
     result = []
     with xarray.open_dataset(data_bytes, engine="h5netcdf") as burn_windows_dataset:
