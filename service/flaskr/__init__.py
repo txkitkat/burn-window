@@ -148,11 +148,11 @@ def process_window_data(file_name, window_plot_file_name, legend_file_name, colo
         data_bytes = "./" + file_name
 
     unx_offset = time.mktime(datetime.datetime(1979,1,1).timetuple()) #- (8*60*60)
-    print(start_date)
+#    print(start_date)
     start_time_unx = start_date*24*60*60 + unx_offset
     end_time_unx = end_date*24*60*60 + unx_offset
 
-    print(start_time_unx)
+#    print(start_time_unx)
     start_dt = datetime.datetime.utcfromtimestamp(start_time_unx)
     end_dt = datetime.datetime.utcfromtimestamp(end_time_unx)
 
@@ -179,9 +179,9 @@ def process_window_data(file_name, window_plot_file_name, legend_file_name, colo
     flattened_data = None
     total_days = 0
 
-
+    print(f"Scanning files from {start_file} to {end_file}")
     for file in range(start_file, end_file, 5):
-       print(start_file, ", ", end_file, ", ", file)
+       print(f"Opening file {file}-{file+5}")
        # current_data = xarray.open_dataset(data_bytes[:-3]+f"_{file}_{file+5}.nc", engine="h5netcdf").astype(float)
        with  xarray.open_dataset(data_bytes[:-3]+f"_{file}_{file+5}.nc", engine="h5netcdf") as current_dataset:
            current_data = current_dataset.__xarray_dataarray_variable__
