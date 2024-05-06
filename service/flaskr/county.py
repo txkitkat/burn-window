@@ -6,6 +6,9 @@ import numpy as np
 import boto3
 import io
 
+import datetime
+import time
+
 deploying_production = False
 
 warnings.simplefilter("ignore", category=RuntimeWarning)
@@ -156,7 +159,7 @@ def process_window_data(file_name, shape, start, end):
                 flattened_data =  xarray.DataArray(coords=[current_data.coords['lat'][:], current_data.coords['lon'][:]],
                                                 dims=['lat', 'lon'])
 
-           file_data = np.sum(current_dataset.data[start_idx:end_idx + 1, :, :], axis=0)
+           file_data = np.sum(current_data[start_idx:end_idx + 1, :, :], axis=0)
            if first_file:
                     flattened_data.data = file_data
            else:
