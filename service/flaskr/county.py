@@ -6,6 +6,9 @@ import numpy as np
 import boto3
 import io
 
+import datetime
+import time
+
 deploying_production = False
 
 warnings.simplefilter("ignore", category=RuntimeWarning)
@@ -101,23 +104,83 @@ def process_window_data(file_name, shape, start, end):
         bucket_name = 'fire-map-dashboard-geospatial-data'
         data_bytes = get_file_from_s3(bucket_name, file_name)
     else:
-        data_bytes = "./flaskr/" + file_name
+        data_bytes = "./" + file_name
+
+
+
+
+    unx_offset = time.mktime(datetime.datetime(1979,1,1).timetuple()) #- (8*60*60)
+    #print(start_date)
+    start_time_unx = start*24*60*60 + unx_offset
+    end_time_unx = end*24*60*60 + unx_offset
+
+    #print(start_time_unx)
+    start_dt = datetime.datetime.utcfromtimestamp(start_time_unx)
+    end_dt = datetime.datetime.utcfromtimestamp(end_time_unx)
+
+    #Which files do we start/stop at
+    start_year, end_year = start_dt.year, end_dt.year
+    start_file = start_year - ((start_year+1)%5)
+    end_file = end_year - ((end_year +1)%5)+5
+    
+    #How many days are the first and last days from the beginning of their file
+    first_data_offset = time.mktime(datetime.datetime(start_file,1,1).timetuple())
+    last_data_offset = time.mktime(datetime.datetime(end_file-5, 1, 1).timetuple())
+
+    first_idx = int((start_time_unx - first_data_offset)/(24*60*60))
+    last_idx = int((end_time_unx - last_data_offset)/(24*60*60))
+
 
     result = []
-    with xarray.open_dataset(data_bytes, engine="h5netcdf") as burn_windows_dataset:
-        burn_windows = burn_windows_dataset.__xarray_dataarray_variable__
-        flattened_window = xarray.DataArray(coords=[burn_windows.coords['lat'][:], burn_windows.coords['lon'][:]],
+
+
+    flattened_data = None
+    total_days = 0
+
+
+    for file in range(start_file, end_file, 5):
+       print(start_file, ", ", end_file, ", ", file)
+       # current_data = xarray.open_dataset(data_bytes[:-3]+f"_{file}_{file+5}.nc", engine="h5netcdf").astype(float)
+       with  xarray.open_dataset(data_bytes[:-3]+f"_{file}_{file+5}.nc", engine="h5netcdf") as current_dataset:
+           current_data = current_dataset.__xarray_dataarray_variable__
+
+           #Assume we're scanning the entire file, unless we've got the first or last file to be scanned
+           start_idx, end_idx = 0,  current_data.shape[0]
+           if file == start_file:
+                start_idx = first_idx
+           if file == end_file - 5:
+                end_idx = last_idx
+           total_days += end_idx - start_idx
+
+           first_file = False
+           if flattened_data is None:
+                first_file = True
+                #don't bother calculating this more than once; format is relic of old code
+                flattened_data =  xarray.DataArray(coords=[current_data.coords['lat'][:], current_data.coords['lon'][:]],
+                                                dims=['lat', 'lon'])
+
+           file_data = np.sum(current_data[start_idx:end_idx + 1, :, :], axis=0)
+           if first_file:
+                    flattened_data.data = file_data
+           else:
+                    flattened_data.data += file_data
+
+
+        #burn_windows = burn_windows_dataset.__xarray_dataarray_variable__
+    flattened_window = xarray.DataArray(coords=[flattened_data.coords['lat'][:], flattened_data.coords['lon'][:]],
                                             dims=['lat', 'lon'])
 
-        flattened_window.data = np.sum(burn_windows.data[start:end + 1, :, :], axis=0)
-        flattened_window.rio.write_crs("EPSG:4326", inplace=True)
 
-        county_area = xarray.DataArray(coords=[burn_windows.coords['lat'][:], burn_windows.coords['lon'][:]],
+
+    flattened_window.data = flattened_data.data#np.sum(burn_windows.data[start:end + 1, :, :], axis=0)
+    flattened_window.rio.write_crs("EPSG:4326", inplace=True)
+
+    county_area = xarray.DataArray(coords=[flattened_data.coords['lat'][:], flattened_data.coords['lon'][:]],
                                        dims=['lat', 'lon'])
-        county_area.rio.write_crs("EPSG:4326", inplace=True)
-        county_area.data = np.ones(county_area.shape).astype('uint32')
+    county_area.rio.write_crs("EPSG:4326", inplace=True)
+    county_area.data = np.ones(county_area.shape).astype('uint32')
 
-        for i in range(58):
+    for i in range(58):
             area_in_window = flattened_window.rio.clip([shape.geometry[i]], shape.crs, drop=True)
 
             area_total = county_area.rio.clip([shape.geometry[i]], shape.crs, drop=True)
