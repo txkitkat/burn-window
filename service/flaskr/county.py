@@ -91,7 +91,7 @@ def get_file_from_s3(bucket_name, file_name):
         return None
 
 def query_county(start, end):
-    shape = geopandas.read_file("./CA_Counties/CA_Counties_TIGER2016.shp")
+    shape = geopandas.read_file("./flaskr/CA_Counties/CA_Counties_TIGER2016.shp")
 
     county_result = process_window_data("window.nc", shape, start, end)
     return county_result

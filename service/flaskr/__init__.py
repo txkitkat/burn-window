@@ -21,7 +21,7 @@ deploying_production = False
 
 # main threading issues with matplotlib
 matplotlib.use('Agg')
-cali_shape = geopandas.read_file("./california_shp/CA_State_TIGER2016.shp")
+cali_shape = geopandas.read_file("./flaskr/california_shp/CA_State_TIGER2016.shp")
 
 s3 = boto3.client('s3')
 
@@ -145,7 +145,7 @@ def process_window_data(file_name, window_plot_file_name, legend_file_name, colo
         bucket_name = 'fire-map-dashboard-geospatial-data'
         data_bytes = get_file_from_s3(bucket_name, file_name)
     else:
-        data_bytes = "./" + file_name
+        data_bytes = "./flaskr/" + file_name
 
     unx_offset = time.mktime(datetime.datetime(1979,1,1).timetuple()) #- (8*60*60)
 #    print(start_date)
@@ -288,8 +288,8 @@ def process_window_data(file_name, window_plot_file_name, legend_file_name, colo
     plt.ioff()
         
     plt.imshow(duplicate_clipped, cmap=colormap)
-    fig.savefig(window_plot_file_name + '.svg', format='svg', dpi=1500)
-    allow_svg_to_stretch(window_plot_file_name + '.svg')
+    fig.savefig("./flaskr/" + window_plot_file_name + '.svg', format='svg', dpi=1500)
+    allow_svg_to_stretch("./flaskr/" + window_plot_file_name + '.svg')
 
     if file_name == "window.nc":
         number_of_total_days_in_burn_window = end_date + 1 - start_date
@@ -302,7 +302,7 @@ def process_window_data(file_name, window_plot_file_name, legend_file_name, colo
         plt.colorbar(ax=ax, label="Min Humidity (%)")
     ax.remove()
     plt.close(fig)
-    fig.savefig(legend_file_name + '.png', bbox_inches='tight', pad_inches=0, dpi=1200)
+    fig.savefig("./flaskr/" + legend_file_name + '.png', bbox_inches='tight', pad_inches=0, dpi=1200)
 
 
 def allow_svg_to_stretch(file_name):
