@@ -104,7 +104,7 @@ def process_window_data(file_name, shape, start, end):
         bucket_name = 'fire-map-dashboard-geospatial-data'
         data_bytes = get_file_from_s3(bucket_name, file_name)
     else:
-        data_bytes = "./" + file_name
+        data_bytes = "./flaskr/" + file_name
 
 
 
