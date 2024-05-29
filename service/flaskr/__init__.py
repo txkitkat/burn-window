@@ -139,13 +139,6 @@ def query(start_date: int, end_date: int):
     
 def process_window_data(file_name, window_plot_file_name, legend_file_name, colormap, start_date, end_date):
 
-    # Check if in deployment
-    if deploying_production:
-        # Fetch a file from S3
-        bucket_name = 'fire-map-dashboard-geospatial-data'
-        data_bytes = get_file_from_s3(bucket_name, file_name)
-    else:
-        data_bytes = "./flaskr/" + file_name
 
     unx_offset = time.mktime(datetime.datetime(1979,1,1).timetuple()) #- (8*60*60)
 #    print(start_date)
@@ -183,7 +176,19 @@ def process_window_data(file_name, window_plot_file_name, legend_file_name, colo
     for file in range(start_file, end_file, 5):
        print(f"Opening file {file}-{file+5}")
        # current_data = xarray.open_dataset(data_bytes[:-3]+f"_{file}_{file+5}.nc", engine="h5netcdf").astype(float)
-       with  xarray.open_dataset(data_bytes[:-3]+f"_{file}_{file+5}.nc", engine="h5netcdf") as current_dataset:
+
+       file_name_sub = file_name[:-3]+f"_{file}_{file+5}.nc"
+       
+       # Check if in deployment
+       if deploying_production:
+            # Fetch a file from S3
+            bucket_name = 'fire-map-dashboard-geospatial-data'
+            data_bytes = get_file_from_s3(bucket_name, file_name_sub)
+       else:
+            data_bytes = "./flaskr/" + file_name_sub
+
+
+       with  xarray.open_dataset(data_bytes, engine="h5netcdf") as current_dataset:
            current_data = current_dataset.__xarray_dataarray_variable__
 
            #Assume we're scanning the entire file, unless we've got the first or last file to be scanned
